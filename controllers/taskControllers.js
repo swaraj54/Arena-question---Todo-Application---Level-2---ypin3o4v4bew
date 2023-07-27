@@ -1,7 +1,7 @@
-const Users   = require("../models/user.js");
+const Users = require("../models/user.js");
 const jwt = require("jsonwebtoken");
-const Tasks   = require("../models/task.js");
-const bcrypt  = require('bcrypt');
+const Tasks = require("../models/task.js");
+const bcrypt = require('bcrypt');
 const { valid } = require("joi");
 const JWT_SECRET = "newtonSchool";
 
@@ -49,13 +49,53 @@ json =
 
 */
 
-const createTask =async (req, res) => {
-
+const createTask = async (req, res) => {
     //creator_id is user id who have created this task.
+    try {
+        const { heading, description, token } = req.body;
+        if (!heading) return res.status(404).json({ status: "error", message: " Heading is required!" })
+        if (!description) return res.status(404).json({ status: "error", message: " Description is required!" })
+        if (!token) return res.status(404).json({ status: "error", message: " Token is required!" })
 
-    const { heading, description, token  } = req.body;
-    //Write your code here.
+        const decodedToken = jwt.verify(token, JWT_SECRET)
 
+        if (!decodedToken) {
+            return res.status(404).json(
+                {
+                    status: 'fail',
+                    message: 'Invalid token'
+                }
+            )
+        }
+        const { userId } = decodedToken;
+
+        const isUserExist = await Users.findOne({ _id: userId });
+
+        if (isUserExist) {
+            const task = new Tasks({
+                heading, description, creator_id: userId
+            })
+            await task.save();
+
+            return res.status(200).json({
+                message: 'Task added successfully',
+                task_id: task._id, //id of task that is created.
+                status: 'success'
+            })
+        } else {
+            return res.status(404).json(
+                {
+                    status: 'fail',
+                    message: 'User is not present in Database.'
+                }
+            )
+        }
+    } catch (error) {
+        return res.status(500).json({
+            status: 'fail',
+            message: error.message
+        })
+    }
 }
 
 /*
@@ -98,9 +138,36 @@ json = {
 */
 
 const getdetailTask = async (req, res) => {
+    try {
+        const task_id = req.body.task_id;
 
-    const task_id = req.body.task_id;
-    //Write your code here.
+        if (!task_id) return res.status(404).json({ status: "fail", message: "Task Id required!" })
+
+        const isTaskExist = await Tasks.findById(task_id);
+
+        if (isTaskExist) {
+            return res.status(200).json({
+                status: 'success',
+                data: {
+                    Status: isTaskExist.status,
+                    _id: isTaskExist._id,
+                    heading: isTaskExist.heading,
+                    description: isTaskExist.description,
+                    creator_id: isTaskExist.creator_id
+                }
+            })
+        } else {
+            return res.status(500).json({
+                status: 'fail',
+                message: error.message
+            })
+        }
+    } catch (error) {
+        return res.status(500).json({
+            status: 'fail',
+            message: error.message
+        })
+    }
 }
 
 module.exports = { createTask, getdetailTask };
