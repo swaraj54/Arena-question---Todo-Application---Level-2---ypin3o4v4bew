@@ -56,8 +56,15 @@ const createTask = async (req, res) => {
         if (!heading) return res.status(404).json({ status: "error", message: " Heading is required!" })
         if (!description) return res.status(404).json({ status: "error", message: " Description is required!" })
         if (!token) return res.status(404).json({ status: "error", message: " Token is required!" })
-
-        const decodedToken = jwt.verify(token, JWT_SECRET)
+        let decodedToken;
+        try {
+            decodedToken = jwt.verify(token, JWT_SECRET);
+        } catch (err) {
+            res.status(404).json({
+                "status": 'fail',
+                "message": 'Invalid token'
+            });
+        }
 
         console.log(decodedToken, "decodedToken")
 
@@ -79,7 +86,7 @@ const createTask = async (req, res) => {
                 }
             )
         }
-        
+
         const { userId } = decodedToken;
 
         const isUserExist = await Users.findOne({ _id: userId });
