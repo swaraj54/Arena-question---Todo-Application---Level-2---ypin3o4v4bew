@@ -69,6 +69,17 @@ const createTask = async (req, res) => {
                 }
             )
         }
+        const currentTime = Math.floor(Date.now() / 1000)
+
+        if (currentTime >= decodedToken?.exp) {
+            return res.status(404).json(
+                {
+                    status: 'fail',
+                    message: 'Invalid token'
+                }
+            )
+        }
+        
         const { userId } = decodedToken;
 
         const isUserExist = await Users.findOne({ _id: userId });
