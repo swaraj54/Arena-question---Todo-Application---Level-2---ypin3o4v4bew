@@ -59,7 +59,9 @@ const createTask = async (req, res) => {
 
         const decodedToken = jwt.verify(token, JWT_SECRET)
 
-        if (!decodedToken) {
+        console.log(decodedToken, "decodedToken")
+
+        if (!decodedToken?.userId || !decodedToken?.iat || !decodedToken?.exp) {
             return res.status(404).json(
                 {
                     status: 'fail',
